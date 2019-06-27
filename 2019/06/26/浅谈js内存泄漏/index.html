@@ -6,19 +6,20 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <link rel="dns-prefetch" href="https://wzzz90.github.io">
-  <title>博客</title>
+  <title>浅谈js内存泄漏 | 博客</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="学习">
-<meta name="keywords" content="博客  学习   js">
-<meta property="og:type" content="website">
-<meta property="og:title" content="博客">
-<meta property="og:url" content="https://wzzz90.github.io/index.html">
+  <meta name="description" content="内存泄露是每个开发者最终都要面对的问题，它是许多问题的根源：反应迟缓，崩溃，高延迟，以及其他应用问题。">
+<meta name="keywords" content="js内存泄漏,内存泄漏,垃圾回收">
+<meta property="og:type" content="article">
+<meta property="og:title" content="浅谈js内存泄漏">
+<meta property="og:url" content="https://wzzz90.github.io/2019/06/26/浅谈js内存泄漏/index.html">
 <meta property="og:site_name" content="博客">
-<meta property="og:description" content="学习">
+<meta property="og:description" content="内存泄露是每个开发者最终都要面对的问题，它是许多问题的根源：反应迟缓，崩溃，高延迟，以及其他应用问题。">
 <meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2019-06-27T02:36:55.009Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="博客">
-<meta name="twitter:description" content="学习">
+<meta name="twitter:title" content="浅谈js内存泄漏">
+<meta name="twitter:description" content="内存泄露是每个开发者最终都要面对的问题，它是许多问题的根源：反应迟缓，崩溃，高延迟，以及其他应用问题。">
   
     <link rel="alternative" href="/atom.xml" title="博客" type="application/atom+xml">
   
@@ -158,16 +159,14 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-    <article id="post-浅谈js内存泄漏" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+            <article id="post-浅谈js内存泄漏" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/06/26/浅谈js内存泄漏/">浅谈js内存泄漏</a>
+    <h1 class="article-title" itemprop="name">
+      浅谈js内存泄漏
     </h1>
   
 
@@ -184,9 +183,82 @@
     <div class="article-entry" itemprop="articleBody">
       
         <p>内存泄露是每个开发者最终都要面对的问题，它是许多问题的根源：反应迟缓，崩溃，高延迟，以及其他应用问题。</p>
-        
+<a id="more"></a>
+<h3 id="什么是内存泄漏"><a href="#什么是内存泄漏" class="headerlink" title="什么是内存泄漏"></a>什么是内存泄漏</h3><p>本质上，内存泄露可以定义为：应用程序不再需要占用内存的时候，由于某些原因，内存没有被操作系统或可用内存池回收。<br>简单来说就是不再用道德内存，没有及时释放。</p>
+<p>要了解js内存泄漏，首先我们需要了解一下js的内存管理机制，即js的垃圾回收机制。</p>
+<h3 id="Mark-and-sweep"><a href="#Mark-and-sweep" class="headerlink" title="Mark-and-sweep"></a>Mark-and-sweep</h3><p>大部分垃圾回收语言用的算法称之为Mark-and-sweep。算法由以下几步组成。</p>
+<p>1.垃圾回收器创建一个“roots”列表。Roots通常是代码中全局变量的引用。js中，“window”对象就会一个全局变量，被当做root。window对象总是存在，因此垃圾回收器可以检查它和它的所有子对象是否存在，即检查该对象是否垃圾。</p>
+<p>2.所有的roots被检查和标记为激活（既不是垃圾）。所有的子对象也被递归地检查，从root开始的所有对象如果是可大的，他就不被当作垃圾。</p>
+<p>3.所有未被标记的内存都会被当作垃圾，收集器就释放内存，归还给操作系统。</p>
+<p>现在的垃圾回收期改良了算法，但本质是相同的。可达内存被标记，其余的被当做垃圾回收。</p>
+<h3 id="垃圾回收机制"><a href="#垃圾回收机制" class="headerlink" title="垃圾回收机制"></a>垃圾回收机制</h3><p>js具有自动垃圾回收机制，也就是说，执行环境负责管理代码执行过程中使用到的内存。所需内存的分配以及无用内存的释放完全实现了自动管理</p>
+<p>js的垃圾回收机制就是找出不再使用的变量，将其清除，释放其占用的内存。当然这个回收不是时刻存在的，是有固定的时间间隔的。</p>
+<p>js中最常用的垃圾回收方式有两种：标记清除和引用计数。</p>
+<h4 id="1-标记清除"><a href="#1-标记清除" class="headerlink" title="1. 标记清除"></a>1. 标记清除</h4><p>这是javascript中最常用的垃圾回收方式。当变量进入环境时，例如在函数中声明一个变量，就将这个变量标记为“进入环境”。当变量离开环境时，再将其标记为“离开环境”。之后执行后，将其清除。</p>
+<p>从js回收机制来说，永远不会释放进入执行环境的变量所占用的内存，因为只要执行流进入相应的环境，就有可能会用到它们。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">function func() &#123;</span><br><span class="line">  var a = 1;//被标记进入环境</span><br><span class="line">  var b = 2;//被标记进入幻境</span><br><span class="line">&#125;</span><br><span class="line">func();//执行完毕之后，变量a,b被标记离开环境，被回收</span><br></pre></td></tr></table></figure>
+
+<p>如果我们代码写法不当，会使变量一直处于“进入环境”的状态，无法被回收</p>
+<h4 id="2-引用计数"><a href="#2-引用计数" class="headerlink" title="2. 引用计数"></a>2. 引用计数</h4><p>另一种不太常见的垃圾回收策略是引用计数。引用计数的含义是跟踪记录每个值被引用的次数。当声明了一个变量并将一个引用类型赋值给该变量时，则这个值的引用次数就是1。相反，如果包含对这个值引用的变量又取得了另外一个值，则这个值的引用次数就减1。当这个引用次数变成0时，则说明没有办法再访问这个值了，因而就可以将其所占的内存空间给收回来。这样，垃圾收集器下次再运行时，它就会释放那些引用次数为0的值所占的内存。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">function test()&#123;</span><br><span class="line"> var a = &#123;&#125; ; //a的引用次数为0 </span><br><span class="line"> var b = a ; //a的引用次数加1，为1 </span><br><span class="line"> var c = a; //a的引用次数再加1，为2</span><br><span class="line"> var b =&#123;&#125;; //a的引用次数减1，为1</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>只要引用次数不为0，垃圾收集器就无法释放该变量占用的内存</p>
+<h3 id="导致内存泄漏的几种情况"><a href="#导致内存泄漏的几种情况" class="headerlink" title="导致内存泄漏的几种情况"></a>导致内存泄漏的几种情况</h3><h4 id="1-意外的全局变量"><a href="#1-意外的全局变量" class="headerlink" title="1.意外的全局变量"></a>1.意外的全局变量</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">function leaks()&#123;  </span><br><span class="line">    leak = &apos;xxxxxx&apos;;//leak 成为一个全局变量，不会被回收</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>调用完函数以后，变量仍然存在,导致泄漏。<br>在js文件头部加上 ‘use strict’ 启用严格模式来避免这类问题, 严格模式会阻止你创建意外的全局变量。</p>
+<h4 id="2-被遗忘的计时器或回调"><a href="#2-被遗忘的计时器或回调" class="headerlink" title="2.被遗忘的计时器或回调"></a>2.被遗忘的计时器或回调</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">var someResource = getData();</span><br><span class="line">setInterval(function() &#123;</span><br><span class="line">    var node = document.getElementById(&apos;Node&apos;);</span><br><span class="line">    if(node) &#123;</span><br><span class="line">        node.innerHTML = JSON.stringify(someResource));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;, 1000);</span><br></pre></td></tr></table></figure>
+
+<p>如果后续id为Node的节点被移除了，定时器里的node变量仍然持有其引用，导致游离的DOM子树无法释放。同时, 因为计时器回调函数中包含对 someResource 的引用, 定时器外面的 someResource 也不会被释放.</p>
+<p>当不需要setInterval或者setTimeout时，定时器没有被clear，定时器的回调函数以及内部依赖的变量都不能被回收，造成内存泄漏</p>
+<h4 id="3-未清除-dom-元素的引用"><a href="#3-未清除-dom-元素的引用" class="headerlink" title="3.未清除 dom 元素的引用"></a>3.未清除 dom 元素的引用</h4><p>在js中，我们对于经常需要访问的dom节点一般都是将其缓存下来。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">var elements = &#123; </span><br><span class="line">    button: document.getElementById(&apos;button&apos;), </span><br><span class="line">    image: document.getElementById(&apos;image&apos;), </span><br><span class="line">    text: document.getElementById(&apos;text&apos;) </span><br><span class="line">&#125;; </span><br><span class="line"> </span><br><span class="line">function doStuff() &#123; </span><br><span class="line">    image.src = &apos;http://some.url/image&apos;; </span><br><span class="line">    button.click(); </span><br><span class="line">    console.log(text.innerHTML); </span><br><span class="line">    // 更多逻辑 </span><br><span class="line">&#125; </span><br><span class="line"> </span><br><span class="line">function removeButton() &#123; </span><br><span class="line">    // 按钮是 body 的后代元素 </span><br><span class="line">    document.body.removeChild(document.getElementById(&apos;button&apos;)); </span><br><span class="line"> </span><br><span class="line">    // 此时，仍旧存在一个全局的 #button 的引用 </span><br><span class="line">    // elements 字典。button 元素仍旧在内存中，不能被 GC 回收。 </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>此外还要考虑 DOM 树内部或子节点的引用问题。假如你的 JavaScript 代码中保存了表格某一个 <td> 的引用。将来决定删除整个表格的时候，直觉认为 GC 会回收除了已保存的 </td><td> 以外的其它节点。实际情况并非如此：此</td><td> 是表格的子节点，子元素与父元素是引用关系。由于代码保留了 </td><td> 的引用，导致整个表格仍待在内存中。保存 DOM 元素引用的时候，要小心谨慎</td></p>
+<h4 id="4-闭包"><a href="#4-闭包" class="headerlink" title="4.闭包"></a>4.闭包</h4><p>JavaScript开发的一个关键方面是闭包。闭包是一个内部函数，可以访问外部（封闭）函数的变量。由于JavaScript运行时的实现细节，可能存在以下形式泄漏内存：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">var theThing = null;</span><br><span class="line">var replaceThing = function()&#123;</span><br><span class="line">  var originalThing = theThing; </span><br><span class="line">  var unused = function()&#123; </span><br><span class="line">    //对&apos;originalThing&apos;的引用</span><br><span class="line">    if(originalThing) &#123;</span><br><span class="line">      console.log(&quot;hi&quot;); </span><br><span class="line">    &#125;</span><br><span class="line">  &#125;;</span><br><span class="line"></span><br><span class="line">  theThing = &#123; </span><br><span class="line">    longStr: new Array(1000000).join（&apos;*&apos;）,</span><br><span class="line">    someMethod: function()&#123; </span><br><span class="line">      console.log（&quot;message&quot;）; </span><br><span class="line">    &#125; </span><br><span class="line">  &#125;; </span><br><span class="line">&#125;;</span><br><span class="line">setInterval(replaceThing，1000);</span><br></pre></td></tr></table></figure>
+
+<p>一旦replaceThing被调用，theThing会获取由一个大数组和一个新的闭包（someMethod）组成的新对象。然而，originalThing会被unused变量所持有的闭包所引用（这是theThing从以前的调用变量replaceThing）。需要记住的是，一旦在同一父作用域中为闭包创建了闭包的作用域，作用域就被共享了。</p>
+<p>在这种情况下，闭包创建的范围会将someMethod共享给unused。然而，unused有一个originalThing引用。即使unused从未使用过，someMethod 也可以通过theThing在整个范围之外使用replaceThing。而且someMethod通过unused共享了闭包范围，unused必须引用originalThing以便使其它保持活跃（两封闭之间的整个共享范围）。这就阻止了它被收集。</p>
+<p>所有这些都可能导致相当大的内存泄漏。当上面的代码片段一遍又一遍地运行时，你会看到内存使用率的不断上升。当垃圾收集器运行时，其内存大小不会缩小。这种情况会创建一个闭包的链表，并且每个闭包范围都带有对大数组的间接引用。</p>
+<h4 id="5-循环引用"><a href="#5-循环引用" class="headerlink" title="5.循环引用"></a>5.循环引用</h4><p>循环引用 在引用计数策略下会导致内存泄漏，标记清除不会。 </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">function fn() &#123;</span><br><span class="line"> var a = &#123;&#125;;</span><br><span class="line"> var b = &#123;&#125;;</span><br><span class="line"> a.pro = b;</span><br><span class="line"> b.pro = a;</span><br><span class="line">&#125; </span><br><span class="line">fn();</span><br></pre></td></tr></table></figure>
+
+<p>a和b的引用次数都是2，fn()执行完毕后，两个对象都已经离开环境。<br>在标记清除方式下是没有问题的，但是在引用计数策略下，a和b的引用次数不为0，不会被垃圾回收器回收内存。如果fn函数被大量调用，就会造成内存泄漏。</p>
+<p>参考资料：JavaScript垃圾回收机制 <a href="https://www.cnblogs.com/zhwl/p/4664604.html" target="_blank" rel="noopener">https://www.cnblogs.com/zhwl/p/4664604.html</a><br>          &#8195;&#8195;&#8195;&#8195;&#8195;JavaScript内存泄露的4种方式及如何避免 <a href="https://blog.csdn.net/qappleh/article/details/80337630" target="_blank" rel="noopener">https://blog.csdn.net/qappleh/article/details/80337630</a></p>
+
       
 
+      
+        <div class="page-reward">
+          <a href="javascript:;" class="page-reward-btn tooltip-top">
+            <div class="tooltip tooltip-east">
+            <span class="tooltip-item">
+              赏
+            </span>
+            <span class="tooltip-content">
+              <span class="tooltip-text">
+                <span class="tooltip-inner">
+                  <p class="reward-p"><i class="icon icon-quo-left"></i>谢谢您的支持<i class="icon icon-quo-right"></i></p>
+                  <div class="reward-box">
+                    
+                    <div class="reward-box-item">
+                      <img class="reward-img" src="/alipay.png">
+                      <span class="reward-type">支付宝</span>
+                    </div>
+                    
+                    
+                    <div class="reward-box-item">
+                      <img class="reward-img" src="/wxpay.png">
+                      <span class="reward-type">微信</span>
+                    </div>
+                    
+                  </div>
+                </span>
+              </span>
+            </span>
+          </div>
+          </a>
+        </div>
       
     </div>
     <div class="article-info article-info-index">
@@ -214,97 +286,75 @@
       
 
       
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/06/26/浅谈js内存泄漏/">展开全文 >></a>
-        </p>
-      
 
       
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
         
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
+<div class="share-btn share-icons tooltip-left">
+  <div class="tooltip tooltip-east">
+    <span class="tooltip-item">
+      <a href="javascript:;" class="share-sns share-outer">
+        <i class="icon icon-share"></i>
+      </a>
+    </span>
+    <span class="tooltip-content">
+      <div class="share-wrap">
+        <div class="share-icons">
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="icon icon-weibo"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="icon icon-weixin"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="icon icon-qq"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="icon icon-douban"></i>
+          </a>
+          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a>
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="icon icon-facebook"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="icon icon-twitter"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="icon icon-google"></i>
+          </a>
         </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-闭包是什么，闭包的优缺点" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/06/26/闭包是什么，闭包的优缺点/">闭包是什么，闭包的优缺点</a>
-    </h1>
-  
-
-        
-        <a href="/2019/06/26/闭包是什么，闭包的优缺点/" class="archive-article-date">
-  	<time datetime="2019-06-26T06:14:40.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-06-26</time>
-</a>
-        
-      </header>
-      <div align="center" class="post-count">
-        字数：732字 | 预计阅读时长：2分钟
       </div>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>闭包是学习js路途上逃避不开的一个难点，在很多工具库，框架中都存在应用。</p>
-        
-      
+    </span>
+  </div>
+</div>
 
-      
+<div class="page-modal wx-share js-wx-box">
+    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//pan.baidu.com/share/qrcode?url=https://wzzz90.github.io/2019/06/26/浅谈js内存泄漏/" alt="微信分享二维码">
     </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">闭包</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">闭包优缺点</a>
-        		</li>
-      		
-		</ul>
-	</div>
+</div>
 
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/06/26/闭包是什么，闭包的优缺点/">展开全文 >></a>
-        </p>
-      
-
+<div class="mask js-mask"></div>
       
       <div class="clearfix"></div>
     </div>
   </div>
 </article>
+
+  
+<nav id="article-nav">
+  
+  
+    <a href="/2019/06/26/闭包是什么，闭包的优缺点/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">闭包是什么，闭包的优缺点</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
 
 <aside class="wrap-side-operation">
     <div class="mod-side-operation">
@@ -324,688 +374,33 @@
 
 
 
-
   
-    <article id="post-有关于JWT的一些总结" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
   
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/06/26/有关于JWT的一些总结/">有关于JWT的一些总结</a>
-    </h1>
   
 
-        
-        <a href="/2019/06/26/有关于JWT的一些总结/" class="archive-article-date">
-  	<time datetime="2019-06-26T02:12:24.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-06-26</time>
-</a>
-        
-      </header>
-      <div align="center" class="post-count">
-        字数：2.7k字 | 预计阅读时长：9分钟
-      </div>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>在如今的前后端分离应用中，用户的认证和鉴权是相当重要的一环。实践中存在很多可用方案，各有千秋。</p>
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">JWT</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">token</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">session</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/06/26/有关于JWT的一些总结/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-vuecli3-0开发全栈后台管理权限系统" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/06/21/vuecli3-0开发全栈后台管理权限系统/">vuecli3.0开发全栈后台管理权限系统</a>
-    </h1>
   
 
-        
-        <a href="/2019/06/21/vuecli3-0开发全栈后台管理权限系统/" class="archive-article-date">
-  	<time datetime="2019-06-21T09:18:15.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-06-21</time>
-</a>
-        
-      </header>
-      <div align="center" class="post-count">
-        字数：681字 | 预计阅读时长：2分钟
-      </div>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>该项目使用vue全家桶，express，mongooDB等进行开发</p>
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">vue</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">express</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">mongoose</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">mongoodb</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">全栈</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">jwt</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">权限</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">后台管理</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/06/21/vuecli3-0开发全栈后台管理权限系统/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-vue-ssr服务端渲染和jsp等服务端渲染的区别" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/06/20/vue-ssr服务端渲染和jsp等服务端渲染的区别/">vue ssr服务端渲染和jsp等服务端渲染的区别</a>
-    </h1>
   
 
-        
-        <a href="/2019/06/20/vue-ssr服务端渲染和jsp等服务端渲染的区别/" class="archive-article-date">
-  	<time datetime="2019-06-20T06:06:51.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-06-20</time>
-</a>
-        
-      </header>
-      <div align="center" class="post-count">
-        字数：706字 | 预计阅读时长：2分钟
-      </div>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>近期对vue ssr这种服务端渲染和前些年流行的jsp等服务管渲染有很多不清楚的地方，所以想在此总结一下区别</p>
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">ssr</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">服务端渲染</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">vue ssr</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">vue</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">jsp</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">php</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/06/20/vue-ssr服务端渲染和jsp等服务端渲染的区别/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
   
-    <article id="post-gitment添加评论" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/06/12/gitment添加评论/">gitment添加评论</a>
-    </h1>
-  
+  <div id="gitment-ctn"></div> 
+<link rel="stylesheet" href="https://jjeejj.github.io/css/gitment.css">
+<link rel="stylesheet" href="https://billts.site/extra_css/gitment.css">
+<script src="https://jjeejj.github.io/js/gitment.js"></script>
+<script src="https://billts.site/js/gitment.js"></script>
 
-        
-        <a href="/2019/06/12/gitment添加评论/" class="archive-article-date">
-  	<time datetime="2019-06-12T09:05:02.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-06-12</time>
-</a>
-        
-      </header>
-      <div align="center" class="post-count">
-        字数：700字 | 预计阅读时长：3分钟
-      </div>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>Hexo博客的Yilia主题中评论系统提供了畅言、网易云跟帖、多说、Disqus和gitment。<br>由于多说评论、网易云跟帖已经关闭系统，畅言需要域名备案，disqus是国外的，经常被墙，你懂得。<br>所以斟酌再三选择gitment。</p>
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">hexo</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">gitment</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">添加评论</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">gitment问题</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-	<div class="article-category tagcloud">
-		<i class="icon-book icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="/categories/Hexo教程//" class="article-tag-list-link color2">Hexo教程</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/06/12/gitment添加评论/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-hexo博客踩过的一些坑" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/06/11/hexo博客踩过的一些坑/">hexo博客踩过的一些坑</a>
-    </h1>
-  
-
-        
-        <a href="/2019/06/11/hexo博客踩过的一些坑/" class="archive-article-date">
-  	<time datetime="2019-06-11T02:53:05.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-06-11</time>
-</a>
-        
-      </header>
-      <div align="center" class="post-count">
-        字数：778字 | 预计阅读时长：3分钟
-      </div>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>使用github+hexo制作博客的过程中遇到了很多问题，在这里将它们记录下来以供参考</p>
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">hexo</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">博客</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">hexo问题</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-	<div class="article-category tagcloud">
-		<i class="icon-book icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="/categories/Hexo教程//" class="article-tag-list-link color2">Hexo教程</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/06/11/hexo博客踩过的一些坑/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-github+hexo的部分配置" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/06/11/github+hexo的部分配置/">github+hexo的部分配置</a>
-    </h1>
-  
-
-        
-        <a href="/2019/06/11/github+hexo的部分配置/" class="archive-article-date">
-  	<time datetime="2019-06-11T02:36:54.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-06-11</time>
-</a>
-        
-      </header>
-      <div align="center" class="post-count">
-        字数：455字 | 预计阅读时长：2分钟
-      </div>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>有关于hexo的配置</p>
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">github</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">hexo</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">博客主题</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">博客头像</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-	<div class="article-category tagcloud">
-		<i class="icon-book icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="/categories/Hexo教程//" class="article-tag-list-link color2">Hexo教程</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/06/11/github+hexo的部分配置/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-github+hexo制作博客" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/06/10/github+hexo制作博客/">github+hexo制作博客</a>
-    </h1>
-  
-
-        
-        <a href="/2019/06/10/github+hexo制作博客/" class="archive-article-date">
-  	<time datetime="2019-06-10T02:00:10.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-06-10</time>
-</a>
-        
-      </header>
-      <div align="center" class="post-count">
-        字数：791字 | 预计阅读时长：3分钟
-      </div>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>hexo 是基于node.js制作的一个博客工具，不是我们理解的一个开源的博客系统。</p>
-<p>hexo 正常来说，不需要部署到我们的服务器上，我们的服务器上保存的，其实是基于在hexo通过markdown编写的文章，然后hexo帮我们生成静态的html页面，然后，将生成的html上传到我们的服务器。简而言之：hexo是个静态页面生成、上传的工具。</p>
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">github</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">hexo</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">博客</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-	<div class="article-category tagcloud">
-		<i class="icon-book icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="/categories/Hexo教程//" class="article-tag-list-link color2">Hexo教程</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2019/06/10/github+hexo制作博客/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
+<script>
+var gitment = new Gitment({
+  id: "Wed Jun 26 2019 16:15:52 GMT+0800",
+  owner: 'wzzz90',
+  repo: 'wzzz90.github.io',
+  oauth: {
+    client_id: '238257fec2c1d945c521',
+    client_secret: 'a5292f44a4334cb6bff5d0ab465d4dd3d5340172',
+  },
+})
+gitment.render('gitment-ctn')
+</script>
   
 
 
@@ -1029,8 +424,8 @@
     <script>
 	var yiliaConfig = {
 		mathjax: false,
-		isHome: true,
-		isPost: false,
+		isHome: false,
+		isPost: true,
 		isArchive: false,
 		isTag: false,
 		isCategory: false,
