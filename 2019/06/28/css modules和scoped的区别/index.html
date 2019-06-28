@@ -8,20 +8,20 @@
   <link rel="dns-prefetch" href="https://wzzz90.github.io">
   <title>css module和scoped的区别 | 博客</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="现为了解决vue中css作用域的问题，vue内置了两种解决方法：Scoped CSS 和 CSS Modules (模块式 CSS)。下面对它们进行详细的介绍。 scoped css什么是scoped css在Vue文件中的style标签上有一个特殊的属性，scoped。当一个style标签拥有scoped属性时候，它的css样式只能用于当前的Vue组件，可以使组件的样式不相互污染。如果一个项目的">
+  <meta name="description" content="现为了解决vue中css作用域的问题，vue内置了两种解决方法：Scoped CSS 和 CSS Modules (模块式 CSS)。下面对它们进行详细的介绍。">
 <meta name="keywords" content="scoped,css module">
 <meta property="og:type" content="article">
 <meta property="og:title" content="css module和scoped的区别">
 <meta property="og:url" content="https://wzzz90.github.io/2019/06/28/css modules和scoped的区别/index.html">
 <meta property="og:site_name" content="博客">
-<meta property="og:description" content="现为了解决vue中css作用域的问题，vue内置了两种解决方法：Scoped CSS 和 CSS Modules (模块式 CSS)。下面对它们进行详细的介绍。 scoped css什么是scoped css在Vue文件中的style标签上有一个特殊的属性，scoped。当一个style标签拥有scoped属性时候，它的css样式只能用于当前的Vue组件，可以使组件的样式不相互污染。如果一个项目的">
+<meta property="og:description" content="现为了解决vue中css作用域的问题，vue内置了两种解决方法：Scoped CSS 和 CSS Modules (模块式 CSS)。下面对它们进行详细的介绍。">
 <meta property="og:locale" content="default">
 <meta property="og:image" content="https://wzzz90.github.io/2019/06/28/css%20modules和scoped的区别/deep.png">
 <meta property="og:image" content="https://wzzz90.github.io/2019/06/28/css%20modules和scoped的区别/xingneng.png">
-<meta property="og:updated_time" content="2019-06-28T06:55:01.439Z">
+<meta property="og:updated_time" content="2019-06-28T06:55:34.311Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="css module和scoped的区别">
-<meta name="twitter:description" content="现为了解决vue中css作用域的问题，vue内置了两种解决方法：Scoped CSS 和 CSS Modules (模块式 CSS)。下面对它们进行详细的介绍。 scoped css什么是scoped css在Vue文件中的style标签上有一个特殊的属性，scoped。当一个style标签拥有scoped属性时候，它的css样式只能用于当前的Vue组件，可以使组件的样式不相互污染。如果一个项目的">
+<meta name="twitter:description" content="现为了解决vue中css作用域的问题，vue内置了两种解决方法：Scoped CSS 和 CSS Modules (模块式 CSS)。下面对它们进行详细的介绍。">
 <meta name="twitter:image" content="https://wzzz90.github.io/2019/06/28/css%20modules和scoped的区别/deep.png">
   
     <link rel="alternative" href="/atom.xml" title="博客" type="application/atom+xml">
@@ -186,6 +186,7 @@
     <div class="article-entry" itemprop="articleBody">
       
         <p>现为了解决vue中css作用域的问题，vue内置了两种解决方法：Scoped CSS 和 CSS Modules (模块式 CSS)。下面对它们进行详细的介绍。</p>
+<a id="more"></a>
 <h2 id="scoped-css"><a href="#scoped-css" class="headerlink" title="scoped css"></a>scoped css</h2><h3 id="什么是scoped-css"><a href="#什么是scoped-css" class="headerlink" title="什么是scoped css"></a>什么是scoped css</h3><p>在Vue文件中的style标签上有一个特殊的属性，scoped。当一个style标签拥有scoped属性时候，它的css样式只能用于当前的Vue组件，可以使组件的样式不相互污染。如果一个项目的所有style标签都加上了scoped属性，相当于实现了样式的模块化。</p>
 <h3 id="scoped原理："><a href="#scoped原理：" class="headerlink" title="scoped原理："></a>scoped原理：</h3><p>Vue中的scoped属性的效果主要是通过PostCss实现的。以下是转译前的代码:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&lt;style scoped lang=&quot;less&quot;&gt;</span><br><span class="line">    .example&#123;</span><br><span class="line">        color:red;</span><br><span class="line">    &#125;</span><br><span class="line">&lt;/style&gt;</span><br><span class="line">&lt;template&gt;</span><br><span class="line">    &lt;div class=&quot;example&quot;&gt;scoped测试案例&lt;/div&gt;</span><br><span class="line">&lt;/template&gt;</span><br></pre></td></tr></table></figure>
